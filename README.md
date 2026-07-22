@@ -4,23 +4,23 @@ A custom, lightweight SSH server built in Python designed to emulate a vulnerabl
 
 **Note:** This is an active work-in-progress. Current functionality covers the core SSH emulation engine. Future phases include Docker containerization, Azure deployment, and SIEM integration.
 
-## 🚀 Features
+##  Features
 
 * **Custom SSH Server:** Built from the ground up using the `paramiko` library to intercept raw TCP connections and negotiate SSH handshakes.
 * **Universal Authentication:** Bypasses standard authentication protocols to accept *any* username and password combination, logging the credentials for threat analysis.
 * **Interactive Fake Shell:** Emulates a standard Ubuntu bash environment. Attackers are provided a pseudo-terminal (PTY) that echoes their inputs and simulates generic shell errors to keep them engaged.
 * **Concurrent Connection Handling:** Utilizes Python's `threading` module to manage multiple concurrent attacks simultaneously.
 
-## ⚠️ Security Disclaimer
+##  Security Disclaimer
 
 **DO NOT run this script on a production machine, bare metal, or bind it to a privileged port (like 22) without strict isolation.** This software is intentionally designed to accept unauthorized connections. It should only be run inside a sandboxed environment (like an isolated VM or a strictly bound Docker container) to prevent lateral movement on your local network.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 * **Language:** Python 3.11+
 * **Core Libraries:** `paramiko`, `socket`, `threading`, `cryptography`
 
-## ⚙️ Quick Start
+##  Quick Start
 
 ### Prerequisites
 Ensure you have Python installed, then install the required cryptographic and SSH libraries:
