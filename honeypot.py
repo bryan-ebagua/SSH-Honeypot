@@ -10,6 +10,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 import time
+import os
 
 # Implementing Rate limiting
 MAX_THREADS = 20                   # Maximum number of active connections
@@ -30,7 +31,15 @@ def is_rate_limited(ip):
     return False
 
 
-HOST_KEY = paramiko.RSAKey.generate(2048)
+KEY_FILE = "honeypot.key"
+
+# Load the key if it already exists; otherwise, generate and save a new one.
+if os.path.exists(KEY_FILE):
+    HOST_KEY = paramiko.RSAKey(filename=KEY_FILE)
+else:
+    HOST_KEY = paramiko.RSAKey.generate(2048)
+    HOST_KEY.write_private_key_file(KEY_FILE)
+    print(f"[*] Generated new RSA host key and saved to {KEY_FILE}")
 class HoneypotServer(paramiko.ServerInterface):
     def __init__(self, client_ip):
         self.client_ip = client_ip
