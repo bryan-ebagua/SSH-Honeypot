@@ -7,6 +7,27 @@ import json
 import paramiko
 from datetime import datetime
 import time
+from concurrent.futures import ThreadPoolExecutor
+from collections import defaultdict
+import time
+
+# Implementing Rate limiting
+MAX_THREADS = 20                   # Maximum number of active connections
+MAX_ATTEMPTS_PER_IP = 5            # Maximum number of connections per IP within a window
+TIME_WINDOW = 60                   # Reset window in seconds (1 minute)
+
+ip_tracker = defaultdict(list)
+
+def is_rate_limited(ip):
+    now = time.time()
+    # Remove timestamps older than the time window
+    ip_tracker[ip] = [t for t in ip_tracker[ip] if now - t < TIME_WINDOW]
+    
+    if len(ip_tracker[ip]) >= MAX_ATTEMPTS_PER_IP:
+        return True
+        
+    ip_tracker[ip].append(now)
+    return False
 
 
 HOST_KEY = paramiko.RSAKey.generate(2048)
@@ -121,17 +142,22 @@ def start_honeypot(host='0.0.0.0', port=2222):
     server_socket.listen(100)
     
     print(f"[*] Honeypot listening on {host}:{port} (Press Ctrl+C to stop)")
+
+    #creates a bounded pool of threads instead of spawning a new one for every connection
+    executor = ThreadPoolExecutor(max_workers=MAX_THREADS)
     
     try:
         while True:
             client_socket, client_addr = server_socket.accept()
-            '''
-            Creates a new thread for each connection so multiple attacks could be received at once
-            Note that this could leave the computer vulnerable to significant slowdowns if a large number of attacks come in
-            Can implement rate limiting later
-            '''
-            client_thread = threading.Thread(target=handle_connection, args=(client_socket, client_addr))
-            client_thread.start()
+            client_ip = client_addr[0]
+            # Check IP Rate Limiting
+            if is_rate_limited(client_ip):
+                print(f"[!] Rate limit triggered for {client_ip}. Dropping connection.")
+                client_socket.close()
+                continue
+            
+            # add the connection to the bounded thread pool
+            executor.submit(handle_connection, client_socket, client_addr)
     except KeyboardInterrupt:
         print("\n[*] Shutting down honeypot.")
         server_socket.close()
